@@ -164,7 +164,7 @@ body {
 .tab-btn:active { transform: scale(0.96); }
 
 .tab-content { display: none; }
-.tab-content.active { display: block; }
+.tab-content.active { display: block; max-width: 100%; overflow-x: hidden; }
 
 /* ══════════════════════════════════════
    BARRA DE PUNTAJE
@@ -235,6 +235,8 @@ body {
 ══════════════════════════════════════ */
 .section {
   margin: 0 12px 8px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .section-header {
@@ -267,7 +269,7 @@ body {
   border: 1px solid var(--border);
   border-top: none;
   border-radius: 0 0 10px 10px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* ══════════════════════════════════════
@@ -283,6 +285,10 @@ body {
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
+  width: 100%;
+  box-sizing: border-box;
+  height: auto;
+  min-height: 0;
 }
 
 .item:last-child { border-bottom: none; }
@@ -296,6 +302,7 @@ body {
   font-weight: 700;
   color: var(--muted);
   min-width: 20px;
+  width: 20px;
   padding-top: 2px;
   flex-shrink: 0;
 }
@@ -306,6 +313,10 @@ body {
   line-height: 1.5;
   transition: color 0.2s;
   word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  min-width: 0;
+  max-width: 100%;
 }
 
 /* Badge de puntos para ítems de 2pts en checklist completo */
@@ -324,6 +335,7 @@ body {
 
 .checkbox {
   width: 26px;
+  min-width: 26px;
   height: 26px;
   border-radius: 7px;
   border: 2px solid var(--border);
