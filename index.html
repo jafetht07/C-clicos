@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Check List Tienda V.25</title>
+  <!-- REEMPLAZA LA LIBRERÍA ANTERIOR POR ESTA VERSIÓN QUE SÍ SOPORTA ESTILOS -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+  <script>var XLSX = XLSXStyle;</script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div class="logo">📋</div>
+    <div>
+      <h1>Check List Tienda V.25</h1>
+      <div class="sub">Zona 04 · Costa Rica</div>
+    </div>
+  </div>
+</div>
+
+<!-- FORMULARIO DE VISITA (compartido) -->
+<div class="form-section">
+  <h3>📍 Información de Visita</h3>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Fecha</label>
+      <input type="date" id="fecha">
+    </div>
+    <div class="form-group">
+      <label>Supervisor</label>
+      <input type="text" id="supervisor" placeholder="Nombre" value="Deiver Rubí Rojas">
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Tienda</label>
+      <select id="tienda">
+        <option value="">Seleccionar...</option>
+        <option value="T009 San Carlos">T009 San Carlos</option>
+        <option value="T013 La Virgen">T013 La Virgen</option>
+        <option value="T017 Aguas Zarcas">T017 Aguas Zarcas</option>
+        <option value="T027 Puerto Viejo">T027 Puerto Viejo</option>
+        <option value="T033 Pital">T033 Pital</option>
+        <option value="T034 Río Frío">T034 Río Frío</option>
+        <option value="T039 Guatuso">T039 Guatuso</option>
+        <option value="T063 Puerto Viejo">T063 Puerto Viejo</option>
+        <option value="T075 Pital">T075 Pital</option>
+        <option value="T082 La Fortuna">T082 La Fortuna</option>
+        <option value="T095 Venecia">T095 Venecia</option>
+        <option value="T113 Sta Rosa Pocosol">T113 Sta Rosa Pocosol</option>
+        <option value="T123 Los Chiles">T123 Los Chiles</option>
+        <option value="T129 Guatuso">T129 Guatuso</option>
+        <option value="T181 Florencia">T181 Florencia</option>
+        <option value="T274 San Carlos Hospital">T274 San Carlos Hospital</option>
+        <option value="T424 Agua Zarcas">T424 Agua Zarcas</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Administrador</label>
+      <input type="text" id="admin" placeholder="Nombre">
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs-bar">
+  <button class="tab-btn active" id="tab-btn-abreviado" onclick="switchTab('abreviado')">📋 Abreviado</button>
+  <button class="tab-btn" id="tab-btn-completo" onclick="switchTab('completo')">📑 Completo</button>
+  <button class="tab-btn" id="tab-btn-coaching" onclick="switchTab('coaching')">🧭 Coaching</button>
+</div>
+
+<!-- ══ TAB: ABREVIADO ══ -->
+<div class="tab-content active" id="tab-abreviado">
+
+  <!-- Score abreviado -->
+  <div class="score-bar">
+    <div class="score-circle" id="abrScoreCircle">
+      <div class="score-num" id="abrScorePct">0%</div>
+    </div>
+    <div class="score-info">
+      <div class="score-title">Evaluación Abreviada · Meta: 54 pts</div>
+      <div class="score-pts"><span id="abrScoreReal">0</span> <span>/ 54 pts</span></div>
+      <div class="bar-track">
+        <div class="bar-fill" id="abrBarFill" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="abrContainer"></div>
+</div>
+
+<!-- ══ TAB: COMPLETO ══ -->
+<div class="tab-content" id="tab-completo">
+
+  <!-- Score completo -->
+  <div class="score-bar">
+    <div class="score-circle" id="fullScoreCircle">
+      <div class="score-num" id="fullScorePct">0%</div>
+    </div>
+    <div class="score-info">
+      <div class="score-title">Evaluación Completa · Meta: 110 pts</div>
+      <div class="score-pts"><span id="fullScoreReal">0</span> <span>/ 110 pts</span></div>
+      <div class="bar-track">
+        <div class="bar-fill" id="fullBarFill" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="fullContainer"></div>
+</div>
+
+<!-- ══ TAB: COACHING ══ -->
+<div class="tab-content" id="tab-coaching">
+
+  <div class="coaching-section">
+    <h3>📊 Indicadores de Venta</h3>
+    <div class="form-group" style="margin-bottom:12px;max-width:240px">
+      <label>Tipo de Cambio (₡/$)</label>
+      <input type="number" class="coaching-input" id="tipo_cambio" placeholder="600" value="600">
+    </div>
+
+    <div class="coaching-table-wrap">
+      <table class="coaching-table">
+        <thead>
+          <tr>
+            <th>Indicador</th>
+            <th>Meta $</th>
+            <th>Meta ₡</th>
+            <th>Venta $</th>
+            <th>Venta ₡</th>
+            <th>% Logro</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Venta Total</td>
+            <td><input type="number" class="coaching-input" id="c_vt_meta" placeholder="0"></td>
+            <td class="colon-cell" id="c_vt_meta_colon">₡ —</td>
+            <td><input type="number" class="coaching-input" id="c_vt_real" placeholder="0"></td>
+            <td class="colon-cell" id="c_vt_real_colon">₡ —</td>
+            <td class="pct-cell" id="c_vt_pct">—</td>
+          </tr>
+          <tr>
+            <td>Ventas de Crédito</td>
+            <td><input type="number" class="coaching-input" id="c_cr_meta" placeholder="0"></td>
+            <td class="colon-cell" id="c_cr_meta_colon">₡ —</td>
+            <td><input type="number" class="coaching-input" id="c_cr_real" placeholder="0"></td>
+            <td class="colon-cell" id="c_cr_real_colon">₡ —</td>
+            <td class="pct-cell" id="c_cr_pct">—</td>
+          </tr>
+          <tr>
+            <td>Ventas de Contado</td>
+            <td><input type="number" class="coaching-input" id="c_ct_meta" placeholder="0"></td>
+            <td class="colon-cell" id="c_ct_meta_colon">₡ —</td>
+            <td><input type="number" class="coaching-input" id="c_ct_real" placeholder="0"></td>
+            <td class="colon-cell" id="c_ct_real_colon">₡ —</td>
+            <td class="pct-cell" id="c_ct_pct">—</td>
+          </tr>
+          <tr>
+            <td>Margen Comercial</td>
+            <td><input type="number" class="coaching-input" id="c_mc_meta" placeholder="0"></td>
+            <td class="colon-cell" id="c_mc_meta_colon">₡ —</td>
+            <td><input type="number" class="coaching-input" id="c_mc_real" placeholder="0"></td>
+            <td class="colon-cell" id="c_mc_real_colon">₡ —</td>
+            <td class="pct-cell" id="c_mc_pct">—</td>
+          </tr>
+          <tr>
+            <td>SRM_VE</td>
+            <td><input type="number" class="coaching-input" id="c_srm_meta" placeholder="0"></td>
+            <td class="colon-cell" id="c_srm_meta_colon">₡ —</td>
+            <td><input type="number" class="coaching-input" id="c_srm_real" placeholder="0"></td>
+            <td class="colon-cell" id="c_srm_real_colon">₡ —</td>
+            <td class="pct-cell" id="c_srm_pct">—</td>
+          </tr>
+          <tr>
+            <td>Gastos</td>
+            <td><input type="number" class="coaching-input" id="c_gas_meta" placeholder="0"></td>
+            <td class="colon-cell" id="c_gas_meta_colon">₡ —</td>
+            <td><input type="number" class="coaching-input" id="c_gas_real" placeholder="0"></td>
+            <td class="colon-cell" id="c_gas_real_colon">₡ —</td>
+            <td class="pct-cell" id="c_gas_pct">—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Utilidad -->
+    <div class="coaching-utilidad">
+      <div class="utilidad-label">Utilidad</div>
+      <div class="utilidad-fields">
+        <div class="form-group">
+          <label>Meta $</label>
+          <input type="number" class="coaching-input" id="c_ut_meta" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>Meta ₡</label>
+          <div class="colon-cell" id="c_ut_meta_colon" style="padding:8px 10px;border-radius:8px;text-align:right;">₡ —</div>
+        </div>
+        <div class="form-group">
+          <label>Acum. $</label>
+          <input type="number" class="coaching-input" id="c_ut_acum" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>Acum. ₡</label>
+          <div class="colon-cell" id="c_ut_acum_colon" style="padding:8px 10px;border-radius:8px;text-align:right;">₡ —</div>
+        </div>
+        <div class="form-group">
+          <label>% Logro</label>
+          <div class="pct-cell" id="c_ut_pct" style="padding:8px 10px;border-radius:8px;text-align:center;">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Observaciones por sección -->
+  <div class="coaching-section">
+    <h3>📝 Observaciones por Sección</h3>
+
+    <div class="obs-block">
+      <div class="obs-title">1. PRESENTACIÓN DE TIENDA</div>
+      <div class="obs-label">¿Qué puntos se deben mejorar?</div>
+      <textarea class="coaching-textarea" id="obs1_mejora" rows="2" placeholder="Escribir observaciones..."></textarea>
+      <div class="obs-label">¿Qué ACCIONES se tomarán para lograrlo?</div>
+      <textarea class="coaching-textarea" id="obs1_accion" rows="2" placeholder="Escribir acciones..."></textarea>
+    </div>
+
+    <div class="obs-block">
+      <div class="obs-title">2. EXHIBICIÓN DE MERCADERÍA</div>
+      <div class="obs-label">¿Qué puntos se deben mejorar?</div>
+      <textarea class="coaching-textarea" id="obs2_mejora" rows="2" placeholder="Escribir observaciones..."></textarea>
+      <div class="obs-label">¿Qué ACCIONES se tomarán para lograrlo?</div>
+      <textarea class="coaching-textarea" id="obs2_accion" rows="2" placeholder="Escribir acciones..."></textarea>
+    </div>
+
+    <div class="obs-block">
+      <div class="obs-title">3. CONTROL DE INVENTARIO</div>
+      <div class="obs-label">¿Qué puntos se deben mejorar?</div>
+      <textarea class="coaching-textarea" id="obs3_mejora" rows="2" placeholder="Escribir observaciones..."></textarea>
+      <div class="obs-label">¿Qué ACCIONES se tomarán para lograrlo?</div>
+      <textarea class="coaching-textarea" id="obs3_accion" rows="2" placeholder="Escribir acciones..."></textarea>
+      <div class="obs-label">Hallazgos en selectivo de inventario ejecutado por Supervisor</div>
+      <textarea class="coaching-textarea" id="obs3_hallazgo" rows="2" placeholder="Escribir hallazgos..."></textarea>
+    </div>
+
+    <div class="obs-block">
+      <div class="obs-title">4. CONTROL DE VALORES</div>
+      <div class="obs-label">¿Qué puntos se deben mejorar?</div>
+      <textarea class="coaching-textarea" id="obs4_mejora" rows="2" placeholder="Escribir observaciones..."></textarea>
+      <div class="obs-label">¿Qué ACCIONES se tomarán para lograrlo?</div>
+      <textarea class="coaching-textarea" id="obs4_accion" rows="2" placeholder="Escribir acciones..."></textarea>
+      <div class="obs-label">Hallazgos en arqueo de fondos de caja ejecutado por Supervisor</div>
+      <textarea class="coaching-textarea" id="obs4_hallazgo" rows="2" placeholder="Escribir hallazgos..."></textarea>
+    </div>
+
+    <div class="obs-block">
+      <div class="obs-title">5. VENTAS</div>
+      <div class="obs-label">¿Qué puntos se deben mejorar?</div>
+      <textarea class="coaching-textarea" id="obs5_mejora" rows="2" placeholder="Escribir observaciones..."></textarea>
+      <div class="obs-label">¿Qué ACCIONES se tomarán para lograrlo?</div>
+      <textarea class="coaching-textarea" id="obs5_accion" rows="2" placeholder="Escribir acciones..."></textarea>
+    </div>
+
+    <div class="obs-block">
+      <div class="obs-title">OBSERVACIONES GENERALES</div>
+      <div class="obs-label">Cumplimiento de compromisos última visita y avances.</div>
+      <textarea class="coaching-textarea" id="obs_generales" rows="3" placeholder="Escribir observaciones generales..."></textarea>
+    </div>
+  </div>
+</div>
+<!-- fin tab coaching -->
+
+<!-- BOTONES FIJOS -->
+<div class="btn-row">
+  <button class="btn btn-reset" onclick="confirmReset()">🗑</button>
+  <button class="btn btn-secondary" onclick="exportExcel()">📤 Excel</button>
+  <button class="btn btn-primary" onclick="shareWhatsApp()">📲 WhatsApp</button>
+  <button class="btn btn-email" onclick="shareEmail()">📧 Correo</button>
+</div>
+
+<!-- MODAL RESET -->
+<div class="modal-bg" id="resetModal">
+  <div class="modal">
+    <h3>¿Reiniciar checklist?</h3>
+    <p>Se borrarán todas las marcas y observaciones. La información de la tienda se conservará.</p>
+    <div class="btn-row-modal">
+      <button class="btn btn-secondary" style="flex:1" onclick="closeModal()">Cancelar</button>
+      <button class="btn" style="flex:1;background:var(--red);color:#fff" onclick="doReset()">Reiniciar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="checklist.js"></script>
+<script src="export.js"></script>
+
+<!-- Calcular % logro en coaching en tiempo real -->
+<script>
+const coachingPairs = [
+  ['c_vt_meta','c_vt_real','c_vt_pct'],
+  ['c_cr_meta','c_cr_real','c_cr_pct'],
+  ['c_ct_meta','c_ct_real','c_ct_pct'],
+  ['c_mc_meta','c_mc_real','c_mc_pct'],
+  ['c_srm_meta','c_srm_real','c_srm_pct'],
+  ['c_gas_meta','c_gas_real','c_gas_pct'],
+];
+
+function formatColon(dollars, tc) {
+  if (!dollars || isNaN(dollars) || !tc || isNaN(tc)) return '₡ —';
+  const colones = dollars * tc;
+  return '₡ ' + Math.round(colones).toLocaleString('es-CR');
+}
+
+function updateAllColones() {
+  const tc = parseFloat(document.getElementById('tipo_cambio').value) || 600;
+  coachingPairs.forEach(([metaId, realId]) => {
+    const meta = parseFloat(document.getElementById(metaId).value);
+    const real = parseFloat(document.getElementById(realId).value);
+    document.getElementById(metaId + '_colon').textContent = formatColon(meta, tc);
+    document.getElementById(realId + '_colon').textContent = formatColon(real, tc);
+  });
+  const utMeta = parseFloat(document.getElementById('c_ut_meta').value);
+  const utAcum = parseFloat(document.getElementById('c_ut_acum').value);
+  document.getElementById('c_ut_meta_colon').textContent = formatColon(utMeta, tc);
+  document.getElementById('c_ut_acum_colon').textContent = formatColon(utAcum, tc);
+}
+
+document.getElementById('tipo_cambio').addEventListener('input', updateAllColones);
+
+coachingPairs.forEach(([metaId, realId, pctId]) => {
+  function calcPct() {
+    const tc   = parseFloat(document.getElementById('tipo_cambio').value) || 600;
+    const meta = parseFloat(document.getElementById(metaId).value);
+    const real = parseFloat(document.getElementById(realId).value);
+    const el   = document.getElementById(pctId);
+    document.getElementById(metaId + '_colon').textContent = formatColon(meta, tc);
+    document.getElementById(realId + '_colon').textContent = formatColon(real, tc);
+    if (!meta || isNaN(meta) || isNaN(real)) { el.textContent = '—'; el.className = 'pct-cell'; return; }
+    const pct = real / meta;
+    el.textContent = Math.round(pct * 100) + '%';
+    el.className = 'pct-cell ' + (pct >= 1 ? 'pct-green' : pct >= 0.7 ? 'pct-yellow' : 'pct-red');
+  }
+  document.getElementById(metaId).addEventListener('input', calcPct);
+  document.getElementById(realId).addEventListener('input', calcPct);
+});
+// Utilidad
+function calcUtilidad() {
+  const tc   = parseFloat(document.getElementById('tipo_cambio').value) || 600;
+  const meta = parseFloat(document.getElementById('c_ut_meta').value);
+  const acum = parseFloat(document.getElementById('c_ut_acum').value);
+  const el   = document.getElementById('c_ut_pct');
+  document.getElementById('c_ut_meta_colon').textContent = formatColon(meta, tc);
+  document.getElementById('c_ut_acum_colon').textContent = formatColon(acum, tc);
+  if (!meta || isNaN(meta) || isNaN(acum)) { el.textContent = '—'; el.className = 'pct-cell'; return; }
+  const pct = acum / meta;
+  el.textContent = Math.round(pct * 100) + '%';
+  el.className = 'pct-cell ' + (pct >= 1 ? 'pct-green' : pct >= 0.7 ? 'pct-yellow' : 'pct-red');
+}
+document.getElementById('c_ut_meta').addEventListener('input', calcUtilidad);
+document.getElementById('c_ut_acum').addEventListener('input', calcUtilidad);
+</script>
+
+</body>
+</html>
