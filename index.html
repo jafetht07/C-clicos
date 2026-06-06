@@ -7,6 +7,8 @@
   <!-- REEMPLAZA LA LIBRERÍA ANTERIOR POR ESTA VERSIÓN QUE SÍ SOPORTA ESTILOS -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
   <script>var XLSX = XLSXStyle;</script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -277,8 +279,21 @@
 <div class="btn-row">
   <button class="btn btn-reset" onclick="confirmReset()">🗑</button>
   <button class="btn btn-secondary" onclick="exportExcel()">📤 Excel</button>
-  <button class="btn btn-primary" onclick="shareWhatsApp()">📲 WhatsApp</button>
-  <button class="btn btn-email" onclick="shareEmail()">📧 Correo</button>
+  <button class="btn btn-primary" onclick="showWhatsAppModal()">📲 WhatsApp</button>
+  <button class="btn btn-email" onclick="exportPDF()">📄 PDF</button>
+</div>
+
+<!-- MODAL WHATSAPP FORMAT -->
+<div class="modal-bg" id="whatsappModal">
+  <div class="modal">
+    <h3>📲 Compartir por WhatsApp</h3>
+    <p>¿En qué formato desea compartir el archivo?</p>
+    <div class="btn-row-modal">
+      <button class="btn btn-secondary" style="flex:1" onclick="closeWhatsAppModal()">Cancelar</button>
+      <button class="btn btn-secondary" style="flex:1" onclick="shareWhatsApp('excel')">📊 Excel</button>
+      <button class="btn btn-email" style="flex:1" onclick="shareWhatsApp('pdf')">📄 PDF</button>
+    </div>
+  </div>
 </div>
 
 <!-- MODAL RESET -->
