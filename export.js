@@ -212,6 +212,19 @@ function coachingPctStyle(pct) {
   };
 }
 
+
+/* ─────────────────────────────────────
+   HELPER: altura dinámica de fila según texto
+   colW = ancho de columna en caracteres (wch)
+───────────────────────────────────── */
+function rowHeight(text, colW) {
+  if (!text) return 15;
+  // Cada línea ocupa ~13.5pt, con margen mínimo de 15pt
+  const charsPerLine = colW * 1.15;
+  const lines = Math.ceil(text.length / charsPerLine);
+  return Math.max(15, lines * 14);
+}
+
 /* ─────────────────────────────────────
    HELPER: escribir celda con estilo
 ───────────────────────────────────── */
@@ -324,7 +337,7 @@ function buildSheetAbreviado(fecha, tienda, admin, sup) {
       sc(ws, `C${row}`, 'n', 1, metaStyle());
       sc(ws, `D${row}`, 'n', nota, notaStyle(nota));
       sc(ws, `E${row}`, 'n', nota, pctStyle(nota), `IF(C${row}=0,0,D${row}/C${row})`);
-      ws['!rows'][row - 1] = { hpt: 15 };
+      ws['!rows'][row - 1] = { hpt: rowHeight(text, 80) };
       curRow++;
     });
 
@@ -454,7 +467,7 @@ function buildSheetCompleto(fecha, tienda, admin, sup) {
       sc(ws, `D${row}`, 'n', nota, notaStylePts(marked));
       const itemRatio = marked ? 1 : 0;
       sc(ws, `E${row}`, 'n', itemRatio, pctStyle(itemRatio), `IF(C${row}=0,0,D${row}/C${row})`);
-      ws['!rows'][row - 1] = { hpt: 15 };
+      ws['!rows'][row - 1] = { hpt: rowHeight(text, 85) };
       curRow++;
     });
 
@@ -866,4 +879,302 @@ async function shareEmail() {
   });
   body += `\n(Adjunte el archivo Excel descargado.)`;
   window.open(`mailto:?subject=${subject}&body=${encodeURIComponent(body)}`, '_blank');
+}
+/* ─────────────────────────────────────
+   MODAL WHATSAPP
+───────────────────────────────────── */
+function showWhatsAppModal() {
+  document.getElementById('whatsappModal').classList.add('open');
+}
+function closeWhatsAppModal() {
+  document.getElementById('whatsappModal').classList.remove('open');
+}
+
+/* ─────────────────────────────────────
+   COMPARTIR WHATSAPP (excel | pdf)
+───────────────────────────────────── */
+async function shareWhatsAppFmt(formato) {
+  closeWhatsAppModal();
+
+  const fecha  = document.getElementById('fecha').value      || new Date().toISOString().split('T')[0];
+  const tienda = document.getElementById('tienda').value     || '?';
+  const admin  = document.getElementById('admin').value      || '?';
+  const sup    = document.getElementById('supervisor').value || '?';
+  const safe   = tienda.replace(/[^a-zA-Z0-9]/g, '_');
+
+  let totalAbr = 0, totalFull = 0;
+  SECTIONS_ABR.forEach(s => s.items.forEach((_, i) => {
+    if (checksAbr[`${s.id}_${i}`]) totalAbr++;
+  }));
+  SECTIONS_FULL.forEach(s => s.items.forEach((item, i) => {
+    const pts = typeof item === 'string' ? 1 : item.pts;
+    if (checksFull[`${s.id}_${i}`]) totalFull += pts;
+  }));
+
+  const pctAbr  = Math.round((totalAbr  / META_ABR)  * 100);
+  const pctFull = Math.round((totalFull / META_FULL)  * 100);
+  const status  = pctAbr >= 85 ? '[OK]' : pctAbr >= 60 ? '[ATENCIÓN]' : '[CRÍTICO]';
+
+  let blob, fileName, mimeType;
+
+  if (formato === 'pdf') {
+    blob     = buildPDFBlob(fecha, tienda, admin, sup, totalAbr, totalFull, pctAbr, pctFull);
+    fileName = `CK_LIST_${safe}_${fecha}.pdf`;
+    mimeType = 'application/pdf';
+  } else {
+    const wb  = buildExcelWorkbook();
+    const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    blob     = new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    fileName = `CK_LIST_${safe}_${fecha}.xlsx`;
+    mimeType = blob.type;
+  }
+
+  if (navigator.canShare) {
+    try {
+      const file = new File([blob], fileName, { type: mimeType });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ title: `Check List Tienda V.25 - ${tienda}`, files: [file] });
+        showToast('Archivo compartido');
+        return;
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') console.warn('Share falló:', err);
+    }
+  }
+
+  // Fallback: descargar + abrir WhatsApp con mensaje
+  const url = URL.createObjectURL(blob);
+  const a   = document.createElement('a');
+  a.href = url; a.download = fileName; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+
+  let msg = `${status} *Check List Tienda V.25*\n`;
+  msg += `Fecha: ${fecha}\nTienda: ${tienda}\nAdmin: ${admin}\nSupervisor: ${sup}\n\n`;
+  msg += `*Abreviado: ${totalAbr}/${META_ABR} pts (${pctAbr}%)*\n`;
+  msg += `*Completo: ${totalFull}/${META_FULL} pts (${pctFull}%)*\n\n`;
+  SECTIONS_ABR.forEach(sec => {
+    let score = 0;
+    sec.items.forEach((_, i) => { if (checksAbr[`${sec.id}_${i}`]) score++; });
+    msg += `${score === sec.items.length ? '[OK]' : '[PENDIENTE]'} ${sec.title}: ${score}/${sec.items.length}\n`;
+  });
+  const fmtLabel = formato === 'pdf' ? 'PDF' : 'Excel';
+  msg += `\nSe adjunta el archivo ${fmtLabel} con el detalle completo.`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+/* ─────────────────────────────────────
+   EXPORTAR A PDF
+───────────────────────────────────── */
+function buildPDFBlob(fecha, tienda, admin, sup, totalAbr, totalFull, pctAbr, pctFull) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+  const GREEN = [0, 96, 43];
+  const WHITE = [255, 255, 255];
+  const BLACK = [0, 0, 0];
+  const GREY  = [242, 242, 242];
+
+  const pageW  = doc.internal.pageSize.getWidth();
+  const margin = 10;
+  const colW   = pageW - margin * 2;
+  let y = margin;
+
+  // Título
+  doc.setFillColor(...GREEN);
+  doc.rect(margin, y, colW, 12, 'F');
+  doc.setTextColor(...WHITE);
+  doc.setFontSize(14); doc.setFont('helvetica', 'bold');
+  doc.text('Check List Tienda V.25', margin + 3, y + 8);
+  y += 14;
+
+  // Info visita
+  const infoRows = [
+    ['Fecha', fecha,  'Tienda', tienda],
+    ['Supervisor', sup, 'Administrador', admin],
+  ];
+  doc.setFontSize(9);
+  infoRows.forEach(row => {
+    doc.setFillColor(...GREY);
+    doc.rect(margin, y, colW / 2, 7, 'F');
+    doc.rect(margin + colW / 2, y, colW / 2, 7, 'F');
+    doc.setTextColor(...BLACK); doc.setFont('helvetica', 'bold');
+    doc.text(row[0] + ':', margin + 2, y + 5);
+    doc.setFont('helvetica', 'normal');
+    doc.text(String(row[1] || ''), margin + 22, y + 5);
+    doc.setFont('helvetica', 'bold');
+    doc.text(row[2] + ':', margin + colW / 2 + 2, y + 5);
+    doc.setFont('helvetica', 'normal');
+    doc.text(String(row[3] || ''), margin + colW / 2 + 26, y + 5);
+    y += 8;
+  });
+  y += 2;
+
+  // Resumen puntajes
+  doc.autoTable({
+    startY: y,
+    margin: { left: margin, right: margin },
+    head: [['Evaluación', 'Puntos', '% Logro']],
+    body: [
+      ['Abreviado', `${totalAbr} / ${META_ABR} pts`, `${pctAbr}%`],
+      ['Completo',  `${totalFull} / ${META_FULL} pts`, `${pctFull}%`],
+    ],
+    headStyles: { fillColor: GREEN, textColor: WHITE, fontStyle: 'bold', fontSize: 9 },
+    bodyStyles: { fontSize: 9, cellPadding: 3 },
+    columnStyles: { 2: { halign: 'center' } },
+    theme: 'grid',
+  });
+  y = doc.lastAutoTable.finalY + 6;
+
+  function renderSection(title, items, checks, idPrefix, ptsMode) {
+    if (y > 260) { doc.addPage(); y = margin; }
+    doc.setFillColor(...GREEN);
+    doc.rect(margin, y, colW, 8, 'F');
+    doc.setTextColor(...WHITE); doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+    doc.text(title, margin + 3, y + 5.5);
+    y += 10;
+
+    const rows = items.map((item, i) => {
+      const text = typeof item === 'string' ? item : item.t;
+      const pts  = typeof item === 'string' ? 1    : item.pts;
+      const done = checks[`${idPrefix}_${i}`] ? (ptsMode ? pts : 1) : 0;
+      return [text, ptsMode ? String(pts) : '1', done ? String(done) : '0'];
+    });
+
+    doc.autoTable({
+      startY: y,
+      margin: { left: margin, right: margin },
+      head: [['Criterio', 'Meta', 'Nota']],
+      body: rows,
+      headStyles:   { fillColor: GREEN, textColor: WHITE, fontStyle: 'bold', fontSize: 8 },
+      bodyStyles:   { fontSize: 8, cellPadding: 2 },
+      columnStyles: { 0: { cellWidth: colW - 30 }, 1: { cellWidth: 12, halign: 'center' }, 2: { cellWidth: 18, halign: 'center' } },
+      theme: 'grid',
+      didParseCell(data) {
+        if (data.section === 'body' && data.column.index === 2) {
+          const v = Number(data.cell.raw);
+          if (v > 0) { data.cell.styles.fillColor = [198,239,206]; data.cell.styles.textColor = [0,97,0]; }
+          else       { data.cell.styles.fillColor = [255,199,206]; data.cell.styles.textColor = [156,0,6]; }
+        }
+      }
+    });
+    y = doc.lastAutoTable.finalY + 5;
+  }
+
+  // CK LIST ABREVIADO
+  doc.setFillColor(...GREEN);
+  doc.rect(margin, y, colW, 10, 'F');
+  doc.setTextColor(...WHITE); doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+  doc.text('CK LIST ABREVIADO', margin + 3, y + 7);
+  y += 13;
+  SECTIONS_ABR.forEach(sec => renderSection(sec.title, sec.items, checksAbr, sec.id, false));
+
+  // CK LIST COMPLETO
+  doc.addPage(); y = margin;
+  doc.setFillColor(...GREEN);
+  doc.rect(margin, y, colW, 10, 'F');
+  doc.setTextColor(...WHITE); doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+  doc.text('CK LIST COMPLETO', margin + 3, y + 7);
+  y += 13;
+  SECTIONS_FULL.forEach(sec => renderSection(sec.title, sec.items, checksFull, sec.id, true));
+
+  // COACHING
+  doc.addPage(); y = margin;
+  doc.setFillColor(...GREEN);
+  doc.rect(margin, y, colW, 10, 'F');
+  doc.setTextColor(...WHITE); doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+  doc.text('COACHING', margin + 3, y + 7);
+  y += 13;
+
+  const tc = parseFloat(document.getElementById('tipo_cambio').value) || 600;
+  const g2 = id => (document.getElementById(id) ? document.getElementById(id).value || '' : '');
+  const fmt$ = v => v ? `$${Number(v).toLocaleString('es-CR')}` : '-';
+  const fmtC = v => v ? `CRC ${Math.round(Number(v)*tc).toLocaleString('es-CR')}` : '-';
+  const fmtP = (m,r) => (!m||!r) ? '-' : Math.round((Number(r)/Number(m))*100)+'%';
+
+  const coachFields = [
+    ['Venta Total','c_vt_meta','c_vt_real'],
+    ['Ventas Crédito','c_cr_meta','c_cr_real'],
+    ['Ventas Contado','c_ct_meta','c_ct_real'],
+    ['Margen Comercial','c_mc_meta','c_mc_real'],
+    ['SRM_VE','c_srm_meta','c_srm_real'],
+    ['Gastos','c_gas_meta','c_gas_real'],
+  ];
+
+  doc.autoTable({
+    startY: y,
+    margin: { left: margin, right: margin },
+    head: [['Indicador','Meta $','Meta CRC','Venta $','Venta CRC','% Logro']],
+    body: coachFields.map(([label,mId,rId]) => [
+      label, fmt$(g2(mId)), fmtC(g2(mId)), fmt$(g2(rId)), fmtC(g2(rId)), fmtP(g2(mId),g2(rId))
+    ]),
+    headStyles: { fillColor: GREEN, textColor: WHITE, fontStyle: 'bold', fontSize: 8 },
+    bodyStyles: { fontSize: 8, cellPadding: 2 },
+    theme: 'grid',
+  });
+  y = doc.lastAutoTable.finalY + 6;
+
+  const obsFields = [
+    ['1. PRESENTACIÓN / Puntos a mejorar','obs1_mejora'],
+    ['1. PRESENTACIÓN / Acciones','obs1_accion'],
+    ['2. EXHIBICIÓN / Puntos a mejorar','obs2_mejora'],
+    ['2. EXHIBICIÓN / Acciones','obs2_accion'],
+    ['3. INVENTARIO / Puntos a mejorar','obs3_mejora'],
+    ['3. INVENTARIO / Acciones','obs3_accion'],
+    ['3. INVENTARIO / Hallazgos','obs3_hallazgo'],
+    ['4. VALORES / Puntos a mejorar','obs4_mejora'],
+    ['4. VALORES / Acciones','obs4_accion'],
+    ['4. VALORES / Hallazgos','obs4_hallazgo'],
+    ['5. VENTAS / Puntos a mejorar','obs5_mejora'],
+    ['5. VENTAS / Acciones','obs5_accion'],
+    ['OBSERVACIONES GENERALES','obs_generales'],
+  ];
+
+  doc.autoTable({
+    startY: y,
+    margin: { left: margin, right: margin },
+    head: [['Sección','Observación']],
+    body: obsFields.map(([label,id]) => [label, g2(id) || '']),
+    headStyles: { fillColor: GREEN, textColor: WHITE, fontStyle: 'bold', fontSize: 8 },
+    bodyStyles: { fontSize: 8, cellPadding: 2 },
+    columnStyles: { 0: { cellWidth: 65 }, 1: { cellWidth: colW - 65 } },
+    theme: 'grid',
+  });
+
+  y = doc.lastAutoTable.finalY + 10;
+  if (y > 250) { doc.addPage(); y = margin + 10; }
+  doc.setDrawColor(0); doc.setLineWidth(0.3);
+  doc.line(margin + 5, y, margin + colW/2 - 5, y);
+  doc.line(margin + colW/2 + 5, y, margin + colW - 5, y);
+  doc.setFontSize(9); doc.setTextColor(...BLACK); doc.setFont('helvetica','normal');
+  doc.text('Firma del Supervisor', margin + 10, y + 5);
+  doc.text('Firma del Administrador', margin + colW/2 + 5, y + 5);
+
+  return doc.output('blob');
+}
+
+function exportPDF() {
+  const fecha  = document.getElementById('fecha').value      || new Date().toISOString().split('T')[0];
+  const tienda = document.getElementById('tienda').value     || 'Sin_tienda';
+  const admin  = document.getElementById('admin').value      || '';
+  const sup    = document.getElementById('supervisor').value || '';
+  const safe   = tienda.replace(/[^a-zA-Z0-9]/g, '_');
+
+  let totalAbr = 0, totalFull = 0;
+  SECTIONS_ABR.forEach(s => s.items.forEach((_, i) => {
+    if (checksAbr[`${s.id}_${i}`]) totalAbr++;
+  }));
+  SECTIONS_FULL.forEach(s => s.items.forEach((item, i) => {
+    const pts = typeof item === 'string' ? 1 : item.pts;
+    if (checksFull[`${s.id}_${i}`]) totalFull += pts;
+  }));
+  const pctAbr  = Math.round((totalAbr  / META_ABR)  * 100);
+  const pctFull = Math.round((totalFull / META_FULL)  * 100);
+
+  showToast('Generando PDF...');
+  const blob = buildPDFBlob(fecha, tienda, admin, sup, totalAbr, totalFull, pctAbr, pctFull);
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = `CK_LIST_${safe}_${fecha}.pdf`; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+  showToast('PDF exportado correctamente');
 }
