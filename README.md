@@ -7,7 +7,7 @@
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=black)
 ![Estado](https://img.shields.io/badge/estado-herramienta%20interna-informational)
 
-## 🇪🇸 Español
+## Español
 
 ### ¿Qué es?
 
@@ -71,7 +71,7 @@ No hay instalación ni build. Si quieres servirlo por HTTP, cualquier servidor e
 - Los umbrales del semáforo no son iguales en todos lados: en pantalla el corte es aproximadamente 50 % y 85 %, mientras que en Excel, PDF y coaching es 60 % y 85 %. Un mismo puntaje puede verse de distinto color según el lugar.
 - Todo el cálculo y la generación de archivos ocurren en el navegador; no hay backend, autenticación ni envío automático de correos.
 
-## 🇬🇧 English
+## English
 
 ### What is it?
 
