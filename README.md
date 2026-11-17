@@ -11,13 +11,13 @@
 
 ### ¿Qué es?
 
-Es una herramienta interna tipo prototipo para que un supervisor registre una visita a tienda, marque el cumplimiento de los criterios por sección, obtenga el puntaje de la evaluación y genere el informe en Excel o PDF.
+Es una plantilla de checklist para registrar una visita a tienda: el supervisor marca el cumplimiento de los criterios por sección, obtiene el puntaje de la evaluación y genera el informe en Excel o PDF.
 
-Está orientada a la operación de tiendas de Zona 04, Costa Rica: el encabezado indica la zona y la lista de tiendas incluye sucursales de San Carlos, La Fortuna, Pital, Guatuso, Los Chiles y otras.
+Es un ejemplo genérico de supervisión retail: los nombres de zona, sucursales y personas que trae el formulario son datos de muestra.
 
 ### Características
 
-- Datos de la visita: fecha (se rellena con la fecha actual al abrir la página), supervisor (viene precargado), tienda (lista de 17 tiendas, de T009 a T424) y administrador.
+- Datos de la visita: fecha (se rellena con la fecha actual al abrir la página), supervisor, tienda (lista precargada de sucursales de muestra) y administrador.
 - Tres pestañas de trabajo:
   - **Abreviado**: 54 puntos en 6 secciones (presentación, exhibición, inventario, valores, ventas y otros ingresos comerciales).
   - **Completo**: 110 puntos en 7 secciones, con ítems ponderados de 1 o 2 puntos.
@@ -64,7 +64,7 @@ No hay instalación ni build. Si quieres servirlo por HTTP, cualquier servidor e
 ### Notas y limitaciones
 
 - **No hay persistencia.** El estado vive en memoria: al recargar la página se pierden las marcas, los indicadores de coaching y las observaciones. No se usa `localStorage`.
-- **Datos fijos en el código.** El nombre del supervisor viene precargado y la lista de 17 tiendas está escrita directamente en `index.html`; para otro uso hay que editar esas líneas.
+- **Datos fijos en el código.** El nombre del supervisor y la lista de sucursales están escritos directamente en `index.html`; para otro uso hay que editar esas líneas.
 - Los criterios, pesos y metas están en `checklist.js` (`SECTIONS_ABR`, `SECTIONS_FULL`, `META_ABR`, `META_FULL`). Cambiar un ítem implica editar esos arreglos.
 - El modal de WhatsApp ofrece Excel o PDF, pero los botones llaman a `shareWhatsApp('excel')` y `shareWhatsApp('pdf')`; esa función no recibe el formato, así que en la práctica se exporta Excel en ambos casos. La función que sí distingue el formato (`shareWhatsAppFmt`) existe en `export.js` pero no está conectada a la interfaz. `shareEmail()` tampoco se usa desde la UI.
 - En escritorio, cuando el navegador no permite compartir archivos, el flujo alternativo descarga el archivo y abre una pestaña de WhatsApp; depende del bloqueo de ventanas emergentes del navegador.
@@ -75,13 +75,13 @@ No hay instalación ni build. Si quieres servirlo por HTTP, cualquier servidor e
 
 ### What is it?
 
-An internal prototype tool for supervisors: record a store visit, check off the criteria for each section, get the evaluation score and generate the report as Excel or PDF.
+A template checklist for recording a store visit: the supervisor checks off the criteria for each section, gets the evaluation score and generates the report as Excel or PDF.
 
-It targets the store operation of Zona 04, Costa Rica: the header shows the zone and the store list includes branches in San Carlos, La Fortuna, Pital, Guatuso, Los Chiles and others.
+It is a generic retail-supervision example: the zone, branch and staff names it ships with are sample data.
 
 ### Features
 
-- Visit details: date (filled with today's date on load), supervisor (pre-filled), store (a list of 17 stores, T009 to T424) and administrator.
+- Visit details: date (filled with today's date on load), supervisor, store (a pre-loaded list of sample branches) and administrator.
 - Three working tabs:
   - **Abreviado**: 54 points across 6 sections (store presentation, merchandise display, inventory, cash and values, sales, and other commercial income).
   - **Completo**: 110 points across 7 sections, with items weighted 1 or 2 points.
@@ -128,7 +128,7 @@ There is no installation or build step. To serve it over HTTP, any static server
 ### Notes and limitations
 
 - **No persistence.** State lives in memory: reloading the page discards checkmarks, coaching indicators and observations. `localStorage` is not used.
-- **Values hardcoded in the source.** The supervisor name is pre-filled and the list of 17 stores is written directly in `index.html`; other uses require editing those lines.
+- **Values hardcoded in the source.** The supervisor name and the branch list are written directly in `index.html`; other uses require editing those lines.
 - Criteria, weights and targets live in `checklist.js` (`SECTIONS_ABR`, `SECTIONS_FULL`, `META_ABR`, `META_FULL`). Changing an item means editing those arrays.
 - The WhatsApp modal offers Excel or PDF, but the buttons call `shareWhatsApp('excel')` and `shareWhatsApp('pdf')`; that function ignores the format, so Excel is exported in both cases. The format-aware function (`shareWhatsAppFmt`) exists in `export.js` but is not wired to the UI. `shareEmail()` is also unused.
 - On desktop, when the browser cannot share files, the fallback downloads the file and opens a WhatsApp tab; it depends on pop-up blocking settings.
